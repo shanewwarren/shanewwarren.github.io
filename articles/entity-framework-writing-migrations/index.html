@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width">
+    <title>Extending Entity Framework Migration Operations - github.com/shanewwarren
+    </title>
+    <link rel="alternate" href="http://localhost:8080/feed.xml" type="application/rss+xml" title="Buliding things... and stuff!">
+    <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic|Anonymous+Pro:400,700,400italic,700italic|Merriweather:400,700,300">
+    <link rel="stylesheet" href="/css/main.css">
+  </head>
+  <body class="article-detail">
+    <div class="top-bar"></div>
+    <header class="header">
+      <div class="content-wrap">
+        <h1>Extending Entity Framework Migration Operations</h1>
+        <p class="author"> by <span class="author"><a href="mailto:shanewwarren@gmail.com">Shane Warren</a></span>
+        </p>
+      </div>
+    </header>
+    <div id="content">
+      <div class="content-wrap">
+        <article class="article">
+          <section class="content"><p>Writing migrations in Entity Framework (v6.+) provides a convienient way for developers to use C# to make <span class="caps">SQL</span> changes to a database.
+The <code>DbMigration</code> class which all migrations inherit from offers many helpful operations to help generate <span class="caps">SQL</span>.  The operations that the <code>DbMigration</code> class offers does not cover every database type that you may want to write a migration for&nbsp;though.  </p>
+<p><span class="more"></span></p>
+<p>To create views, functions, or even define custom types developers need to resort the the <code>Sql</code> command and need to write out the <span class="caps">SQL</span> directly in the migration.  The <code>Sql</code> operation is useful, but it can result in a lot of duplication of <span class="caps">SQL</span>.  In this tutorial I’ll show you how to move past using the <code>Sql</code> operation and extend the <code>DbMigrations</code> class for your own custom operations that generate&nbsp;<span class="caps">SQL</span>.</p>
+<h2 id="custom-migration-operations">Custom Migration&nbsp;Operations</h2>
+<p>In this post, I’ll demonstrate how to create a pair of custom operations which will generate the <span class="caps">SQL</span> that can create and drop a&nbsp;trigger.</p>
+<p>Creating and dropping a trigger requires two separate operations.  Each of these operations need to inherit from the <code>MigrationOperation</code> class.  Listed below is the code for our two operations <code>DropTriggerOperation</code> and <code>CreateTriggerOperation</code>.</p>
+<pre><code class="lang-cs">
+    <span class="keyword">public</span> <span class="keyword">class</span> CreateTriggerOperation : MigrationOperation
+    {
+        <span class="keyword">public</span> <span class="title">CreateTriggerOperation</span>(<span class="keyword">string</span> triggerName,
+            <span class="keyword">string</span> tableName,
+            CreateTriggerExecutionContextOption executionContext,
+            CreateTriggerActionOption action,
+            <span class="keyword">string</span> body) : <span class="title">base</span>(<span class="keyword">null</span>)
+        {
+            TriggerName = triggerName;
+            TableName = tableName;
+            ExecutionContext = executionContext;
+            Action = action;
+            Body = body;
+        }
+
+        <span class="keyword">public</span> <span class="keyword">string</span> TriggerName { <span class="keyword">get</span>; <span class="keyword">private</span> <span class="keyword">set</span>; }
+
+        <span class="keyword">public</span> <span class="keyword">string</span> TableName { <span class="keyword">get</span>; <span class="keyword">private</span> <span class="keyword">set</span>; }
+
+        <span class="keyword">public</span> CreateTriggerExecutionContextOption ExecutionContext { <span class="keyword">get</span>; <span class="keyword">private</span> <span class="keyword">set</span>; }
+
+        <span class="keyword">public</span> CreateTriggerActionOption Action { <span class="keyword">get</span>; <span class="keyword">private</span> <span class="keyword">set</span>; }
+
+        <span class="keyword">public</span> <span class="keyword">string</span> Body { <span class="keyword">get</span>; <span class="keyword">private</span> <span class="keyword">set</span>; }
+
+        <span class="keyword">public</span> <span class="keyword">override</span> MigrationOperation Inverse
+        {
+            <span class="keyword">get</span> { <span class="keyword">return</span> <span class="keyword">new</span> DropTriggerOperation(TriggerName); }
+        }
+
+        <span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">bool</span> IsDestructiveChange
+        {
+            <span class="keyword">get</span> { <span class="keyword">return</span> <span class="keyword">false</span>; }
+        }
+    }
+
+
+    <span class="keyword">public</span> <span class="keyword">class</span> DropTriggerOperation : MigrationOperation
+    {
+        <span class="keyword">public</span> <span class="title">DropTriggerOperation</span>(<span class="keyword">string</span> triggerName)
+            : <span class="title">base</span>(<span class="keyword">null</span>)
+        {
+            TriggerName = triggerName;
+        }
+        <span class="keyword">public</span> <span class="keyword">string</span> TriggerName { <span class="keyword">get</span>; <span class="keyword">private</span> <span class="keyword">set</span>; }
+
+        <span class="keyword">public</span> <span class="keyword">override</span> MigrationOperation Inverse
+        {
+            <span class="keyword">get</span> { <span class="keyword">return</span> NotSupportedOperation.Instance; }
+        }
+
+        <span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">bool</span> IsDestructiveChange
+        {
+            <span class="keyword">get</span> { <span class="keyword">return</span> <span class="keyword">false</span>; }
+        }
+    }
+</code></pre>
+<p><code>MigrationOperation</code> provides the following properties to&nbsp;override:</p>
+<ul>
+<li>A virtual property <code>Inverse</code> which takes another <code>MigrationOperation</code> which is used to revert the current&nbsp;operation.</li>
+<li>A abstract property <code>IsDestructiveChange</code> which indicates if the operation may result in data&nbsp;loss.</li>
+</ul>
+<p>Along with overriding these properties the operations should include the basic information necessary to generate the appropriate <span class="caps">SQL</span> statement.  Since creating a trigger has options for when the trigger should be executed and during what context some we can create additional enums to encapsulate these&nbsp;choices.</p>
+<pre><code class="lang-cs">
+    <span class="keyword">public</span> <span class="keyword">enum</span> CreateTriggerExecutionContextOption {
+        For,
+        After,
+        InsteadOf
+    }
+
+    <span class="keyword">public</span> <span class="keyword">enum</span> CreateTriggerActionOption {
+        Insert,
+        Update,
+        Delete
+    }
+</code></pre>
+<h2 id="generating-the-sql">Generating the&nbsp;<span class="caps">SQL</span></h2>
+<p>To generate the <span class="caps">SQL</span> for your custom operations you will need to override the specific <code>MigrationSqlGenerator</code> class depending on which database you are trying to add the custom operations for.  Entity Framework currently ships with two classes which inherit from <code>MigrationSqlGenerator</code>:</p>
+<ul>
+<li>Microsoft <span class="caps">SQL</span> Server database: <code>SqlServerMigrationSqlGenerator</code></li>
+<li>Microsoft <span class="caps">SQL</span> Server Compact Edition database: <code>SqlCeMigrationSqlGenerator</code></li>
+</ul>
+<p>In this example we will target the Microsoft <span class="caps">SQL</span>&nbsp;Server.</p>
+<p>Create a class which inherits from the <code>SqlServerMigrationSqlGenerator</code> then add the following&nbsp;code:</p>
+<pre><code class="lang-cs">
+    class CustomSqlServerMigrationSqlGenerator : SqlServerMigrationSqlGenerator
+    {
+        <span class="keyword">protected</span> <span class="keyword">override</span> <span class="keyword">void</span> <span class="title">Generate</span>(MigrationOperation migrationOperation)
+        {
+            <span class="keyword">if</span> (migrationOperation <span class="keyword">is</span> CreateTriggerOperation)
+            {
+                GenerateCreateTrigger(migrationOperation <span class="keyword">as</span> CreateTriggerOperation);
+            }
+            <span class="keyword">else</span> <span class="keyword">if</span> (migrationOperation <span class="keyword">is</span> DropTriggerOperation)
+            {
+                GenerateDropTrigger(migrationOperation <span class="keyword">as</span> DropTriggerOperation);
+            }
+        }
+
+        <span class="keyword">private</span> <span class="keyword">void</span> <span class="title">GenerateCreateTrigger</span>(CreateTriggerOperation operation)
+        {
+            <span class="keyword">using</span> (IndentedTextWriter writer = Writer())
+            {
+                writer.WriteLine(<span class="string">@"<span class="caps">CREATE</span> TRIGGER {0}
+                                       ON {1}
+                                       {2} {3}
+                                       AS
+                                        {4}; "</span>,
+                                  operation.TriggerName,
+                                  operation.TableName,
+                                  GetTriggerExecutionContextString(operation.ExecutionContext),
+                                  GetTriggerActionString(operation.Action),
+                                  operation.Body);
+                Statement(writer);
+            }
+
+        }
+
+        <span class="keyword">private</span> String <span class="title">GetTriggerExecutionContextString</span>(CreateTriggerExecutionContextOption option)
+        {
+            <span class="keyword">switch</span> (option)
+            {
+                <span class="keyword">case</span> CreateTriggerExecutionContextOption.For:
+                    <span class="keyword">return</span> <span class="string">"<span class="caps">FOR</span>"</span>;
+                <span class="keyword">case</span> CreateTriggerExecutionContextOption.After:
+                    <span class="keyword">return</span> <span class="string">"<span class="caps">AFTER</span>"</span>;
+                <span class="keyword">case</span> CreateTriggerExecutionContextOption.InsteadOf:
+                <span class="keyword">default</span>:
+                    <span class="keyword">return</span> <span class="string">"<span class="caps">INSTEAD</span> OF"</span>;
+            }
+        }
+
+        <span class="keyword">private</span> String <span class="title">GetTriggerActionString</span>(CreateTriggerActionOption option)
+        {
+            <span class="keyword">switch</span> (option)
+            {
+                <span class="keyword">case</span> CreateTriggerActionOption.Insert:
+                    <span class="keyword">return</span> <span class="string">"<span class="caps">INSERT</span>"</span>;
+                <span class="keyword">case</span> CreateTriggerActionOption.Update:
+                    <span class="keyword">return</span> <span class="string">"<span class="caps">UPDATE</span>"</span>;
+                <span class="keyword">case</span> CreateTriggerActionOption.Delete:
+                <span class="keyword">default</span>:
+                    <span class="keyword">return</span> <span class="string">"<span class="caps">DELETE</span>"</span>;
+            }
+        }
+
+        <span class="keyword">private</span> <span class="keyword">void</span> <span class="title">GenerateDropTrigger</span>(DropTriggerOperation operation)
+        {
+            <span class="keyword">using</span> (IndentedTextWriter writer = Writer())
+            {
+                writer.WriteLine(<span class="string">"<span class="caps">DROP</span> TRIGGER {0}; "</span>,
+                                  operation.TriggerName);
+                Statement(writer);
+            }
+        }
+    }
+</code></pre>
+<p>By overriding the <code>Generate(MigrationOperation migrationOperation)</code> you can intercept how the <code>SqlServerMigrationSqlGenerator</code> generates <span class="caps">SQL</span> for an unknown operation which inherits from the <code>SqlServerMigrationSqlGenerator</code> class.  Depending on the type of operation we can generate the appropriate <span class="caps">SQL</span> based on the kind of operation it&nbsp;is.</p>
+<h2 id="add-the-extension-methods">Add the extension&nbsp;methods</h2>
+<p>Finally, in order to make these operations available to our migrations we need to write a few extension methods for the <code>DbMigrator</code> class and set them up to pass in the data we need.  The following extension methods now expose these operations to our&nbsp;migrations:</p>
+<pre><code class="lang-cs">
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">CreateTrigger</span>(<span class="keyword">this</span> DbMigration migration,
+            <span class="keyword">string</span> triggerName, <span class="keyword">string</span> tableName,
+            CreateTriggerExecutionContextOption executionContext,
+            CreateTriggerActionOption action,
+            <span class="keyword">string</span> body)
+        {
+            ((IDbMigration)migration)
+              .AddOperation(<span class="keyword">new</span> CreateTriggerOperation(triggerName,
+                 tableName, executionContext, action, body));
+        }
+
+        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">DropTrigger</span>(<span class="keyword">this</span> DbMigration migration,
+         <span class="keyword">string</span> triggerName)
+        {
+            ((IDbMigration)migration)
+              .AddOperation(<span class="keyword">new</span> DropTriggerOperation(triggerName));
+        }
+</code></pre>
+<h2 id="using-the-new-operations-in-migrations">Using the new operations in&nbsp;migrations</h2>
+<p>Now with our extension methods in place we can make use of our new operations in our migrations like&nbsp;so:</p>
+<pre><code class="lang-cs">    <span class="keyword">public</span> <span class="keyword">partial</span> <span class="keyword">class</span> AddMyTriggerName : DbMigration
+    {
+        <span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">void</span> <span class="title">Up</span>()
+        {
+            <span class="keyword">this</span>.CreateTrigger(<span class="string">"MyTriggerName"</span>, <span class="string">"TableName"</span>,
+                 CreateTriggerExecutionContextOption.For,
+                 CreateTriggerActionOption.Insert,
+                 <span class="string">@"... some sql trigger code to execute "</span>);
+
+        }
+
+        <span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">void</span> <span class="title">Down</span>()
+        {
+            <span class="keyword">this</span>.DropTrigger(<span class="string">"MyTriggerName"</span>);
+        }
+    }
+</code></pre>
+<h2 id="conclusion">Conclusion</h2>
+<p>While the built-in operations can accomdate most of your needs when writing migrations, being able to add custom operations can greatly reduce duplication and can provide a better interface to generating your&nbsp;migrations.</p>
+</section>
+        </article>
+      </div>
+    </div>
+    <footer>
+      <div class="content-wrap">
+        <div class="nav"><a href="/">« Full blog</a></div>
+        <section class="about"><p>This software development blog was created by <a href="http://http://shanewwarren.github.io">Shane Warren</a> and is licensed under the <a href="http://opensource.org/licenses/MIT">MIT-license</a>.</p>
+
+        </section>
+        <section class="copy">
+          <p>&copy; 2014 Shane Warren &mdash; powered by&nbsp;<a href="https://github.com/jnordberg/wintersmith">Wintersmith</a>
+          </p>
+        </section>
+      </div>
+    </footer>
+  </body>
+</html>
