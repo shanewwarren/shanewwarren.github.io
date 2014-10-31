@@ -7,8 +7,10 @@ block content
       header
         p.date
           span= moment.utc(article.date).format('DD. MMMM YYYY')
-        h2
-          a(href=article.url)= article.title
+        h2.article_heading
+          a(href=article.url )= article.title
+        div.comment_count
+          a(href=article.url + '#disqus_thread' )= article.title
       section.content
         if article.intro.length > 0
           | !{ typogr(article.intro).typogrify() }
@@ -24,6 +26,3 @@ block prepend footer
       a(href='/archive.html') « Archives
     if nextPage
       a(href=nextPage.url) Next page »
-
-
-

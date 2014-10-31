@@ -16,6 +16,20 @@ body {
   margin: 0 auto;
 }
 
+.comment_count a {
+  color: #C44D58;
+  text-decoration: none;
+}
+
+.comment_count {
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.article header h2.article_heading {
+  margin-bottom: 0;
+}
+
 .top-bar {
   background: url('../img/header-bar2.png') top center;
   height: 3px;
