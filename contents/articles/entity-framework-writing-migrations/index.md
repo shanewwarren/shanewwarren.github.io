@@ -5,6 +5,14 @@ date: 2014-10-25 13:53
 template: article.jade
 ---
 
+```cs
+
+    public class CreateTriggerOperation : MigrationOperation
+    {
+    }
+
+```
+
 Writing migrations in Entity Framework (v6.+) provides a convienient way for developers to use C# to make SQL changes to a database.
 The `DbMigration` class which all migrations inherit from offers many helpful operations to help generate SQL.  The operations that the `DbMigration` class offers does not cover every database type that you may want to write a migration for though.  
 
