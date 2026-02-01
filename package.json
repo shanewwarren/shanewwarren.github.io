@@ -20,6 +20,7 @@
 		"@astrojs/sitemap": "3.6.0",
 		"@fontsource-variable/public-sans": "^5.2.7",
 		"@fontsource/gabarito": "^5.2.8",
+		"@fontsource/instrument-sans": "^5.2.8",
 		"@tailwindcss/vite": "4.1.17",
 		"astro": "5.16.3",
 		"astro-expressive-code": "^0.41.3",
