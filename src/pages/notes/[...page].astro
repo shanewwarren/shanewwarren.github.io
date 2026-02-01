@@ -3,7 +3,7 @@ import { type CollectionEntry, getCollection } from "astro:content";
 import type { GetStaticPaths, Page } from "astro";
 import { Icon } from "astro-icon/components";
 import Note from "@/components/note/Note.astro";
-import Pagination from "@/components/Paginator.astro";
+import { Paginator } from "@/components/react";
 import PageLayout from "@/layouts/Base.astro";
 import { collectionDateSort } from "@/utils/date";
 
@@ -58,6 +58,6 @@ const paginationProps = {
 				))
 			}
 		</ul>
-		<Pagination {...paginationProps} />
+		<Paginator {...paginationProps} />
 	</section>
 </PageLayout>

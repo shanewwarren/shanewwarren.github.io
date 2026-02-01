@@ -21,7 +21,10 @@ export async function getTagMeta(tag: string): Promise<CollectionEntry<"tag"> | 
 export function groupPostsByYear(posts: CollectionEntry<"post">[]) {
 	return posts.reduce<Record<string, CollectionEntry<"post">[]>>((acc, post) => {
 		const year = post.data.publishDate.getFullYear().toString();
-		(acc[year] ??= []).push(post);
+		if (!acc[year]) {
+			acc[year] = [];
+		}
+		acc[year].push(post);
 		return acc;
 	}, {});
 }

@@ -2,6 +2,7 @@ import fs from "node:fs";
 // Rehype plugins
 import { rehypeHeadingIds } from "@astrojs/markdown-remark";
 import mdx from "@astrojs/mdx";
+import react from "@astrojs/react";
 import sitemap from "@astrojs/sitemap";
 import tailwind from "@tailwindcss/vite";
 import { defineConfig, envField } from "astro/config";
@@ -26,6 +27,7 @@ export default defineConfig({
 		domains: ["webmention.io"],
 	},
 	integrations: [
+		react(),
 		expressiveCode(expressiveCodeOptions),
 		icon(),
 		sitemap(),

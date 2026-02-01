@@ -2,8 +2,7 @@
 import { render } from "astro:content";
 import type { GetStaticPaths, InferGetStaticPropsType } from "astro";
 import { Icon } from "astro-icon/components";
-import PostPreview from "@/components/blog/PostPreview.astro";
-import Pagination from "@/components/Paginator.astro";
+import { Paginator, PostPreview } from "@/components/react";
 import { getAllPosts, getTagMeta, getUniqueTags } from "@/data/post";
 import PageLayout from "@/layouts/Base.astro";
 import { collectionDateSort } from "@/utils/date";
@@ -75,5 +74,5 @@ const paginationProps = {
 			))
 		}
 	</ul>
-	<Pagination {...paginationProps} />
+	<Paginator {...paginationProps} />
 </PageLayout>

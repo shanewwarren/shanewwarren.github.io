@@ -1,8 +1,7 @@
 ---
 import { type CollectionEntry, getCollection } from "astro:content";
-import PostPreview from "@/components/blog/PostPreview.astro";
 import Note from "@/components/note/Note.astro";
-import SocialList from "@/components/SocialList.astro";
+import { PostPreview, SocialList } from "@/components/react";
 import { getAllPosts } from "@/data/post";
 import PageLayout from "@/layouts/Base.astro";
 import { collectionDateSort } from "@/utils/date";

@@ -1,4 +1,11 @@
-/** @type {import("@types/prettier").Options} */
+/**
+ * Prettier Configuration
+ *
+ * NOTE: Prettier is used ONLY for Tailwind class sorting via prettier-plugin-tailwindcss.
+ * All other formatting (code style, semicolons, quotes, etc.) is handled by Biome.
+ *
+ * @type {import("@types/prettier").Options}
+ */
 export default {
 	printWidth: 100,
 	semi: true,

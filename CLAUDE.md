@@ -8,16 +8,20 @@ This is a personal blog/portfolio site built with **Astro 5** using the Astro Ca
 
 ## Commands
 
+**Always use `bun` instead of `npm` for all package management and scripts.**
+
 ```bash
-npm run dev        # Start dev server at localhost:3000
-npm run build      # Production build to ./dist/
-npm run postbuild  # Generate Pagefind search index (run after build)
-npm run check      # Type check + Biome linting
-npm run lint       # Auto-fix with Biome
-npm run format     # Prettier formatting
+bun run dev        # Start dev server at localhost:3000
+bun run build      # Production build to ./dist/
+bun run postbuild  # Generate Pagefind search index (run after build)
+bun run check      # Type check + Biome linting
+bun run lint       # Auto-fix with Biome
+bun run format     # Prettier formatting
+bun install        # Install dependencies
+bun add <pkg>      # Add a dependency
 ```
 
-For local preview with search working: `npm run build && npm run postbuild && npm run preview`
+For local preview with search working: `bun run build && bun run postbuild && bun run preview`
 
 ## Architecture
 
@@ -31,10 +35,19 @@ Content schemas are defined in `src/content.config.ts` with Zod validation.
 ### Key Directories
 - `src/pages/` - File-based routing (Astro pages)
 - `src/layouts/` - Page templates (`Base.astro`, `BlogPost.astro`)
-- `src/components/` - Reusable components (organized by feature: `blog/`, `layout/`, `note/`)
+- `src/components/` - Reusable components
+  - `src/components/react/` - React components (Header, Footer, Search, ThemeToggle, TOC, etc.)
+  - `src/components/blog/` - Blog-specific Astro components (Masthead, webmentions)
+  - `src/components/note/` - Note-related components
 - `src/data/post.ts` - Post filtering, grouping, and tag utilities
 - `src/plugins/` - Custom Remark plugins (admonitions, GitHub cards, reading time)
 - `src/styles/` - Global CSS with Tailwind and theme variables
+
+### React Integration
+The project uses `@astrojs/react` for interactive components. React components are in `src/components/react/` and use client directives:
+- `client:load` - Hydrate immediately (Header, Search, ThemeToggle)
+- `client:idle` - Hydrate when idle (TOC)
+- Icons use `@iconify/react` instead of `astro-icon`
 
 ### Configuration
 - `src/site.config.ts` - Site metadata (author, title, URL, menu links, code block themes)
@@ -53,5 +66,12 @@ Uses CSS custom properties with `data-theme="light|dark"` attribute switching. T
 ## Code Style
 
 - TypeScript strict mode with path alias `@/*` for `src/*`
-- Biome for linting (tabs, semicolons, trailing commas)
-- Prettier for Astro/markdown formatting
+- **Biome** for linting AND formatting (tabs, semicolons, trailing commas, quotes)
+- **Prettier** for Tailwind class sorting only (via `prettier-plugin-tailwindcss`)
+
+### Tooling Setup
+
+The project uses a dual-tool approach:
+- `npm run lint` - Biome fixes linting issues
+- `npm run format` - Biome formats code, then Prettier sorts Tailwind classes
+- `npm run check` - Type checking + Biome linting (no auto-fix)
