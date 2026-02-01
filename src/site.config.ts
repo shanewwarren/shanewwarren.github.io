@@ -27,7 +27,7 @@ export const siteConfig: SiteConfig = {
 	*/
 	title: "Astro Cactus",
 	// ! Please remember to replace the following site property with your own domain, used in astro.config.ts
-	url: "https://shanewwarren.github.io",
+	url: "https://shanewarren.me",
 };
 
 // Used to generate links in both the Header & Footer.
